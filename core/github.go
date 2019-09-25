@@ -53,16 +53,26 @@ func GetUserOrOrganization(login string, client *github.Client) (*GithubOwner, e
   }, nil
 }
 
-func GetRepositoriesFromOwner(login *string, client *github.Client) ([]*GithubRepository, error) {
+func GetRepositoriesFromOwner(login *string, client *github.Client, targetType *string) ([]*GithubRepository, error) {
   var allRepos []*GithubRepository
   loginVal := *login
   ctx := context.Background()
   opt := &github.RepositoryListOptions{
     Type: "sources",
   }
-
+  optOrg := &github.RepositoryListByOrgOptions{
+    Type: "sources",
+  }
+  
   for {
-    repos, resp, err := client.Repositories.List(ctx, loginVal, opt)
+    var repos []*github.Repository
+    var resp *github.Response
+    var err error
+    if *targetType == "Organization" {
+      repos, resp, err = client.Repositories.ListByOrg(ctx, loginVal, optOrg)
+    } else {
+      repos, resp, err = client.Repositories.List(ctx, loginVal, opt)
+    }
     if err != nil {
       return allRepos, err
     }
@@ -85,7 +95,11 @@ func GetRepositoriesFromOwner(login *string, client *github.Client) ([]*GithubRe
     if resp.NextPage == 0 {
       break
     }
-    opt.Page = resp.NextPage
+    if *targetType == "Organization" {
+      optOrg.Page = resp.NextPage
+    } else {
+      opt.Page = resp.NextPage
+    }
   }
 
   return allRepos, nil

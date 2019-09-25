@@ -62,7 +62,7 @@ func GatherRepositories(sess *core.Session) {
           wg.Done()
           return
         }
-        repos, err := core.GetRepositoriesFromOwner(target.Login, sess.GithubClient)
+        repos, err := core.GetRepositoriesFromOwner(target.Login, sess.GithubClient, target.Type)
         if err != nil {
           sess.Out.Error(" Failed to retrieve repositories from %s: %s\n", *target.Login, err)
         }
@@ -115,7 +115,7 @@ func AnalyzeRepositories(sess *core.Session) {
         }
 
         sess.Out.Debug("[THREAD #%d][%s] Cloning repository...\n", tid, *repo.FullName)
-        clone, path, err := core.CloneRepository(repo.CloneURL, repo.DefaultBranch, *sess.Options.CommitDepth)
+        clone, path, err := core.CloneRepository(repo.CloneURL, sess.GithubAccessToken, repo.DefaultBranch, *sess.Options.CommitDepth)
         if err != nil {
           if err.Error() != "remote repository is empty" {
             sess.Out.Error("Error cloning repository %s: %s\n", *repo.FullName, err)
